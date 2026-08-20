@@ -7,8 +7,17 @@ import pino from 'pino';
 import dotenv from 'dotenv';
 import qrcode from 'qrcode-terminal';
 import { Boom } from '@hapi/boom';
+import http from 'http';
 
 dotenv.config();
+
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot Demon🤖 está ativo!');
+}).listen(PORT, () => {
+  console.log(`🌐 Servidor HTTP ativo na porta ${PORT}`);
+});
 
 console.log('\n==========================================');
 console.log('🤖 INICIANDO O WHATSAPP BOT: DEMON🤖 COM MENU INTERATIVO...');
