@@ -1,0 +1,10 @@
+services:
+  - type: worker
+    name: demon-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false

@@ -1,0 +1,9 @@
+node_modules/
+auth_info/
+auth_session/
+.env
+*.log
+qrcode.html
+diagnose-modules.js
+test-gemini.js
+.wwebjs_cache/
