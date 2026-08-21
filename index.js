@@ -22,12 +22,13 @@ const PORT = process.env.PORT || 3000;
 let currentQRImage = null;
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   if (req.url === '/qr' && currentQRImage) {
     res.writeHead(200, { 'Content-Type': 'image/png' });
     res.end(currentQRImage);
   } else if (req.url === '/qr') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end('<h1>QR Code ainda nao gerado. Aguarda...</h1><p>Recarrega em alguns segundos.</p>');
+    res.end('<html><head><meta http-equiv="refresh" content="5"></head><body><h1>QR Code ainda nao gerado. Aguarda...</h1><p>Esta pagina recarrega automaticamente a cada 5 segundos.</p></body></html>');
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end(`${CFG.botName} está ativo!`);
