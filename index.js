@@ -598,6 +598,48 @@ async function startBot() {
             continue;
           }
 
+          // !add
+          if (textLower.startsWith('!add')) {
+            const userAdmin = await isUserAdmin(sock, remoteJid, senderId);
+            if (!userAdmin) {
+              await sock.sendMessage(remoteJid, { text: '❌ Apenas administradores podem usar este comando.' });
+              continue;
+            }
+            const numbers = messageBody.slice(4).trim().split(/[\s,;]+/).map(n => n.replace(/[^\d]/g, '')).filter(n => n.length >= 8);
+            if (numbers.length === 0) {
+              await sock.sendMessage(remoteJid, { text: '⚠️ Usa assim: *!add 258841234567*\n(Pode adicionar vários separados por espaço)' });
+              continue;
+            }
+            const jids = numbers.map(n => `${n}@s.whatsapp.net`);
+            try {
+              const results = await sock.groupParticipantsUpdate(remoteJid, jids, 'add');
+              const added = [], invited = [], failed = [];
+              for (const r of results) {
+                const num = String(r.jid || '').split('@')[0].split(':')[0];
+                const st = String(r.status);
+                if (st === '200') added.push(num);
+                else if (st === '403') invited.push(num);
+                else failed.push(`${num} (erro ${st})`);
+              }
+              let reply = '';
+              if (added.length) reply += `✅ Adicionado(s): @${added.join('\n@')}\n`;
+              if (invited.length) {
+                reply += `📨 Convite enviado no privado para: @${invited.join('\n@')}\n_(a privacidade deles não permite adição direta)_\n`;
+                try {
+                  const code = await sock.groupInviteCode(remoteJid);
+                  for (const num of invited) {
+                    await sock.sendMessage(`${num}@s.whatsapp.net`, { text: `👋 Olá! Foste convidado(a) para entrar no grupo.\n\nEntra aqui: https://chat.whatsapp.com/${code}` });
+                  }
+                } catch {}
+              }
+              if (failed.length) reply += `❌ Falhou: ${failed.join(', ')}`;
+              await sock.sendMessage(remoteJid, { text: reply.trim() || 'Sem resultados.', mentions: [...added, ...invited].map(n => `${n}@s.whatsapp.net`) });
+            } catch (e) {
+              await sock.sendMessage(remoteJid, { text: `❌ Falha ao adicionar. Verifica se o bot é admin no grupo.` });
+            }
+            continue;
+          }
+
           // !demon / !ia
           if (textLower.startsWith('!demon') || textLower.startsWith('!ia')) {
             const userAdmin = await isUserAdmin(sock, remoteJid, senderId);
