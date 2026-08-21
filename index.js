@@ -78,6 +78,15 @@ const SUBMENU_HUMANO = CFG.submenuHumano;
 // HELPER: Extract text from Baileys message
 // ==========================================
 
+function parseInteractiveResponse(msg) {
+  try {
+    const json = JSON.parse(msg?.nativeFlowResponseMessage?.paramsJson || '{}');
+    return json.id || '';
+  } catch {
+    return '';
+  }
+}
+
 function getMessageContent(msg) {
   const m = msg.message;
   if (!m) return '';
@@ -89,6 +98,7 @@ function getMessageContent(msg) {
     m.documentMessage?.caption ||
     m.buttonsResponseMessage?.selectedButtonId ||
     m.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    parseInteractiveResponse(m.interactiveResponseMessage) ||
     ''
   );
 }
@@ -126,12 +136,35 @@ const ROWS = {
 };
 
 function listPayload(bodyText, rows, opts = {}) {
+  const sectionTitle = opts.sectionTitle || 'Opções';
   return {
     text: bodyText,
     title: CFG.botName,
-    buttonText: CFG.menuButtonText || '📋 Abrir Menu',
     footer: '👇 Toque no botão para escolher',
-    sections: [{ title: opts.sectionTitle || 'Opções', rows }]
+    interactiveMessage: {
+      body: { text: bodyText },
+      footer: { text: '👇 Toque no botão para escolher' },
+      nativeFlowMessage: {
+        buttons: [
+          {
+            name: 'single_select',
+            buttonParamsJson: JSON.stringify({
+              has_multiple_buttons: true,
+              sections: [
+                {
+                  title: sectionTitle,
+                  rows: rows.map((r) => ({
+                    id: r.rowId,
+                    title: r.title,
+                    description: r.description || ''
+                  }))
+                }
+              ]
+            })
+          }
+        ]
+      }
+    }
   };
 }
 
