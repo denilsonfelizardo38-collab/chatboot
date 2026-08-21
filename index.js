@@ -5,16 +5,26 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
-import qrcode from 'qrcode-terminal';
+import QRCode from 'qrcode';
 import { Boom } from '@hapi/boom';
 import http from 'http';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Bot Demon🤖 está ativo!');
+let currentQRImage = null;
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/qr' && currentQRImage) {
+    res.writeHead(200, { 'Content-Type': 'image/png' });
+    res.end(currentQRImage);
+  } else if (req.url === '/qr') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<h1>QR Code ainda nao gerado. Aguarda...</h1><p>Recarrega em alguns segundos.</p>');
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot Demon🤖 está ativo!');
+  }
 }).listen(PORT, () => {
   console.log(`🌐 Servidor HTTP ativo na porta ${PORT}`);
 });
@@ -254,9 +264,13 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n📱 Scan the QR code below with WhatsApp:');
-      console.log('   Open WhatsApp > Linked Devices > Link a Device\n');
-      qrcode.generate(qr, { small: true });
+      console.log('\n📱 QR Code gerado!');
+      console.log('🔗 Abre https://chatboott-fqqa.onrender.com/qr no navegador para escanear\n');
+      QRCode.toBuffer(qr, { width: 400, margin: 2 }).then((buf) => {
+        currentQRImage = buf;
+      }).catch((err) => {
+        console.error('Erro ao gerar QR imagem:', err);
+      });
     }
 
     if (connection === 'close') {
