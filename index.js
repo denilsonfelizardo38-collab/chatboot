@@ -23,6 +23,7 @@ const CFG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf
 const PORT = process.env.PORT || 3000;
 let currentQRImage = null;
 let connectionState = 'a iniciar...';
+let logoutResets = 0;
 const recentLogs = [];
 const _origLog = console.log.bind(console);
 const _origErr = console.error.bind(console);
@@ -451,8 +452,20 @@ async function startBot() {
       currentQRImage = null;
 
       if (statusCode === DisconnectReason.loggedOut) {
-        connectionState = 'deslogado — apaga auth_session e reinicia';
-        console.log('❌ Desconectado (logout real). Delete a pasta "auth_session" e reinicie.');
+        connectionState = 'deslogado — a regenerar sessão...';
+        logoutResets += 1;
+        console.log(`❌ Desconectado (logout real). Reset automático ${logoutResets}/3 em 5s...`);
+        if (logoutResets <= 3) {
+          try {
+            fs.rmSync(AUTH_FOLDER, { recursive: true, force: true });
+            console.log('🗑️ Pasta de sessão antiga apagada — novo QR a caminho.');
+          } catch (err) {
+            console.error('Falha ao apagar pasta de sessão:', err.message);
+          }
+          setTimeout(startBot, 5000);
+        } else {
+          console.error('🛑 3 resets por logout sem sucesso. O WhatsApp pode ter bloqueio temporário neste número. Aguarde 1 hora antes de reiniciar o serviço.');
+        }
       } else {
         connectionState = 'desconectado — a reconectar...';
         console.log(`⚠️ Conexão perdida (código: ${statusCode ?? 'desconhecido'}). Reconectando em 3s...`);
@@ -462,6 +475,7 @@ async function startBot() {
 
     if (connection === 'open') {
       connectionState = 'CONECTADO ✓';
+      logoutResets = 0;
       console.log('\n=============================================');
       console.log('✅ BOT DEMON🤖 CONECTADO COM SUCESSO!');
       console.log('📋 Menus Interativos no Privado: ATIVADOS');
