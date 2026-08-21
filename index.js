@@ -833,6 +833,16 @@ async function startBot() {
               .replace(/{{LOCALIZACAO}}/g, lead.localizacao || '')
               .replace(/{{NOME}}/g, lead.nome || '');
             await sock.sendMessage(userKey, { text: confirmMsg });
+            const ownerNum = String(CFG.vendedorNumero || '').replace(/[^\d]/g, '');
+            if (ownerNum) {
+              try {
+                await sock.sendMessage(`${ownerNum}@s.whatsapp.net`, {
+                  text: `🔔 *NOVO PEDIDO!*\n\n🛍️ Produto: ${lead.produto?.nome || '?'}\n💰 Preço: ${lead.produto?.preco || '-'}\n👤 Cliente: ${lead.nome || '-'}\n📞 Contacto: ${lead.numero || '-'}\n📍 Zona: ${lead.localizacao || '-'}`
+                });
+              } catch (err) {
+                console.error('[vendas] falha ao notificar o vendedor:', err.message);
+              }
+            }
             const firstPitch = await getGeminiResponse(userKey,
               `Acabei de registar o meu pedido do ${lead.produto?.nome}. Faz agora a tua apresentação de venda.`,
               buildSalesPrompt(lead));

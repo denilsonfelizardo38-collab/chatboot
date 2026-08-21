@@ -4,6 +4,7 @@
   "antiLink": true,
   "welcomeMessage": true,
   "browserName": "DemonBot",
+  "vendedorNumero": "258879101185",
   "menuPrincipal": "🤖 *ATENDIMENTO AUTOMÁTICO - Demon🤖* ⚡\n\nOlá! Seja muito bem-vindo(a).\nComo posso ajudar você hoje?\n\n*Escolha uma das opções abaixo digitando o número:*\n\n1️⃣ 🛍️ *Ver Produtos / Serviços*\n2️⃣ 💰 *Preços e Formas de Pagamento*\n3️⃣ 📍 *Horário de Atendimento e Informações*\n4️⃣ 🧠 *Tirar Dúvidas com Inteligência Artificial*\n5️⃣ 👤 *Falar com Atendente Humano*\n\n_Digite o número correspondente (ex: 1, 2, 3...)_",
   "submenuProdutos": "🛍️ *CATÁLOGO DE PRODUTOS & SERVIÇOS* ⚡\n\nAqui estão as nossas soluções disponíveis:\n\n💻 *1. Chatbot Personalizado com IA* (Atendimento 24h no WhatsApp)\n🛡️ *2. Bot de Moderação de Grupos* (Anti-Link, Boas-Vindas e Comandos)\n⚙️ *3. Automações e Integrações sob Medida*\n\n---\n👉 *Digite 2* para ver formas de pagamento\n👉 *Digite 4* para tirar dúvidas com a IA\n👉 *Digite 0* para voltar ao Menu Principal",
   "submenuPagamentos": "💰 *FORMAS DE PAGAMENTO & VALORES* ⚡\n\nTrabalhamos com condições facilitadas:\n\n💳 *Formas Aceitas:*\n• M-Pesa\n• E-Mola\n• Paypal\n\n💵 *Planos de Chatbot:*\n• Mensalidade de Manutenção: MZN 400/mês\n\n---\n👉 *Digite 5* para fechar um pedido com atendente humano\n👉 *Digite 0* para voltar ao Menu Principal",
