@@ -315,18 +315,18 @@ async function startBot() {
     }
 
     if (connection === 'close') {
-      let statusCode;
-      if (lastDisconnect?.error) {
-        statusCode = lastDisconnect.error.output?.statusCode;
-      } else if (lastDisconnect?.output) {
-        statusCode = lastDisconnect.output?.statusCode;
-      }
+      const statusCode =
+        lastDisconnect?.error?.output?.statusCode ??
+        lastDisconnect?.error?.status ??
+        lastDisconnect?.output?.statusCode;
 
-      if (statusCode && statusCode !== DisconnectReason.loggedOut) {
-        console.log(`⚠️ Conexão perdida (código: ${statusCode}). Reconectando...`);
-        startBot();
+      currentQRImage = null;
+
+      if (statusCode === DisconnectReason.loggedOut) {
+        console.log('❌ Desconectado (logout real). Delete a pasta "auth_session" e reinicie.');
       } else {
-        console.log('❌ Desconectado (logout). Delete a pasta "auth_session" e reinicie.');
+        console.log(`⚠️ Conexão perdida (código: ${statusCode ?? 'desconhecido'}). Reconectando em 3s...`);
+        setTimeout(startBot, 3000);
       }
     }
 
