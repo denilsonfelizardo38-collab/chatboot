@@ -21,6 +21,12 @@ const CFG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf
 
 const PORT = process.env.PORT || 3000;
 let currentQRImage = null;
+let connectionState = 'a iniciar...';
+const recentLogs = [];
+const _origLog = console.log.bind(console);
+const _origErr = console.error.bind(console);
+console.log = (...a) => { const l = a.map(String).join(' '); recentLogs.push(l); if (recentLogs.length > 40) recentLogs.shift(); _origLog(...a); };
+console.error = (...a) => { const l = '[ERRO] ' + a.map(String).join(' '); recentLogs.push(l); if (recentLogs.length > 40) recentLogs.shift(); _origErr(...a); };
 
 const server = http.createServer((req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -36,6 +42,9 @@ const server = http.createServer((req, res) => {
   } else if (pathOnly === '/qr' || pathOnly === '/qr.png') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end('<html><head><meta http-equiv="refresh" content="5"></head><body style="font-family:sans-serif;text-align:center;background:#111;color:#eee"><h1>QR Code ainda nao gerado. Aguarda...</h1><p>Esta pagina recarrega automaticamente a cada 5 segundos.</p></body></html>');
+  } else if (req.url === '/status') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(`ESTADO: ${connectionState}\nQR pendente: ${currentQRImage ? 'sim' : 'nao'}\n\nULTIMOS EVENTOS:\n${recentLogs.slice(-20).join('\n') || '(nenhum ainda)'}`);
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end(`${CFG.botName} está ativo!`);
@@ -167,10 +176,15 @@ function listPayload(bodyText, rows, opts = {}) {
 }
 
 async function sendList(sock, jid, bodyText, rows, opts = {}) {
-  const msg = generateWAMessageFromContent(jid, listPayload(bodyText, rows, opts), {
-    userJid: sock.user?.id
-  });
-  await sock.relayMessage(jid, msg.message, { messageId: msg.key.id });
+  try {
+    const msg = generateWAMessageFromContent(jid, listPayload(bodyText, rows, opts), {
+      userJid: sock.user?.id
+    });
+    await sock.relayMessage(jid, msg.message, { messageId: msg.key.id });
+  } catch (err) {
+    console.error('[sendList] Menu interativo falhou:', err.message);
+    await sock.sendMessage(jid, { text: bodyText });
+  }
 }
 
 // ==========================================
@@ -310,6 +324,7 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
+      connectionState = 'à espera do escaneamento do QR';
       console.log('\n📱 QR Code gerado!');
       console.log('🔗 Abre https://chatboott-fqqa.onrender.com/qr no navegador para escanear\n');
       QRCode.toBuffer(qr, { width: 400, margin: 2 }).then((buf) => {
@@ -328,14 +343,17 @@ async function startBot() {
       currentQRImage = null;
 
       if (statusCode === DisconnectReason.loggedOut) {
+        connectionState = 'deslogado — apaga auth_session e reinicia';
         console.log('❌ Desconectado (logout real). Delete a pasta "auth_session" e reinicie.');
       } else {
+        connectionState = 'desconectado — a reconectar...';
         console.log(`⚠️ Conexão perdida (código: ${statusCode ?? 'desconhecido'}). Reconectando em 3s...`);
         setTimeout(startBot, 3000);
       }
     }
 
     if (connection === 'open') {
+      connectionState = 'CONECTADO ✓';
       console.log('\n=============================================');
       console.log('✅ BOT DEMON🤖 CONECTADO COM SUCESSO!');
       console.log('📋 Menus Interativos no Privado: ATIVADOS');
