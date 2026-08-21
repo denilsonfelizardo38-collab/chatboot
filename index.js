@@ -189,18 +189,24 @@ async function getGeminiResponse(userId, userMessage) {
 // ADMIN CHECK FUNCTIONS
 // ==========================================
 
+function jidNumber(jid) {
+  return String(jid || '').split(':')[0].split('@')[0];
+}
+
 async function isBotAdmin(sock, groupJid) {
   try {
-    const botNumber = sock.user?.id?.split(':')[0]?.split('@')[0];
-    if (!botNumber) return false;
+    const botNumbers = new Set();
+    if (sock.user?.id) botNumbers.add(jidNumber(sock.user.id));
+    if (sock.user?.lid) botNumbers.add(jidNumber(sock.user.lid));
 
     const metadata = await sock.groupMetadata(groupJid);
     for (const p of metadata.participants) {
-      const pNumber = p.id.split(':')[0].split('@')[0];
-      if (pNumber === botNumber) {
+      const pNumbers = [p.id, p.jid].filter(Boolean).map(jidNumber);
+      if (pNumbers.some((n) => botNumbers.has(n))) {
         return p.admin === 'admin' || p.admin === 'superadmin';
       }
     }
+    console.log(`[isBotAdmin] Bot não encontrado nos participantes de ${groupJid}`);
     return false;
   } catch (err) {
     console.error('[isBotAdmin] Error:', err.message);
@@ -210,12 +216,12 @@ async function isBotAdmin(sock, groupJid) {
 
 async function isUserAdmin(sock, groupJid, userId) {
   try {
-    const senderNumber = userId.split(':')[0].split('@')[0];
+    const senderNumber = jidNumber(userId);
 
     const metadata = await sock.groupMetadata(groupJid);
     for (const p of metadata.participants) {
-      const pNumber = p.id.split(':')[0].split('@')[0];
-      if (pNumber === senderNumber) {
+      const pNumbers = [p.id, p.jid].filter(Boolean).map(jidNumber);
+      if (pNumbers.includes(senderNumber)) {
         return p.admin === 'admin' || p.admin === 'superadmin';
       }
     }
@@ -355,7 +361,10 @@ async function startBot() {
 
         if (isGroup) {
           const botAdmin = await isBotAdmin(sock, remoteJid);
-          if (!botAdmin) continue;
+          if (!botAdmin) {
+            console.log(`[Grupo] Mensagem ignorada (bot não detectado como admin): ${remoteJid}`);
+            continue;
+          }
 
           const textLower = messageBody.toLowerCase();
 
