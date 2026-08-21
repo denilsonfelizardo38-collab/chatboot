@@ -8,8 +8,15 @@ import dotenv from 'dotenv';
 import QRCode from 'qrcode';
 import { Boom } from '@hapi/boom';
 import http from 'http';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CFG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
 const PORT = process.env.PORT || 3000;
 let currentQRImage = null;
@@ -23,14 +30,14 @@ const server = http.createServer((req, res) => {
     res.end('<h1>QR Code ainda nao gerado. Aguarda...</h1><p>Recarrega em alguns segundos.</p>');
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot Demon🤖 está ativo!');
+    res.end(`${CFG.botName} está ativo!`);
   }
 }).listen(PORT, () => {
   console.log(`🌐 Servidor HTTP ativo na porta ${PORT}`);
 });
 
 console.log('\n==========================================');
-console.log('🤖 INICIANDO O WHATSAPP BOT: DEMON🤖 COM MENU INTERATIVO...');
+console.log(`🤖 INICIANDO O WHATSAPP BOT: ${CFG.botName} COM MENU INTERATIVO...`);
 console.log('==========================================\n');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -40,79 +47,25 @@ const userStates = new Map();
 const conversationHistory = new Map();
 
 const CONFIG = {
-  botName: 'Demon🤖',
-  antiLink: true,
-  welcomeMessage: true,
-  prefix: '!'
+  botName: CFG.botName,
+  antiLink: CFG.antiLink,
+  welcomeMessage: CFG.welcomeMessage,
+  prefix: CFG.prefix
 };
 
 // ==========================================
 // MENSAGENS DOS MENUS INTERATIVOS NO PRIVADO
 // ==========================================
 
-const MENU_PRINCIPAL = `🤖 *ATENDIMENTO AUTOMÁTICO - DEMON🤖* ⚡
+const MENU_PRINCIPAL = CFG.menuPrincipal;
 
-Olá! Seja muito bem-vindo(a).
-Como posso ajudar você hoje?
+const SUBMENU_PRODUTOS = CFG.submenuProdutos;
 
-*Escolha uma das opções abaixo digitando o número:*
+const SUBMENU_PAGAMENTOS = CFG.submenuPagamentos;
 
-1️⃣ 🛍️ *Ver Produtos / Serviços*
-2️⃣ 💰 *Preços e Formas de Pagamento*
-3️⃣ 📍 *Horário de Atendimento e Informações*
-4️⃣ 🧠 *Tirar Dúvidas com Inteligência Artificial*
-5️⃣ 👤 *Falar com Atendente Humano*
+const SUBMENU_INFORMACOES = CFG.submenuInformacoes;
 
-_Digite o número correspondente (ex: 1, 2, 3...)_`;
-
-const SUBMENU_PRODUTOS = `🛍️ *CATÁLOGO DE PRODUTOS & SERVIÇOS* ⚡
-
-Aqui estão as nossas soluções disponíveis:
-
-💻 *1. Chatbot Personalizado com IA* (Atendimento 24h no WhatsApp)
-🛡️ *2. Bot de Moderação de Grupos* (Anti-Link, Boas-Vindas e Comandos)
-⚙️ *3. Automações e Integrações sob Medida*
-
----
-👉 *Digite 2* para ver formas de pagamento
-👉 *Digite 4* para tirar dúvidas com a IA
-👉 *Digite 0* para voltar ao Menu Principal`;
-
-const SUBMENU_PAGAMENTOS = `💰 *FORMAS DE PAGAMENTO & VALORES* ⚡
-
-Trabalhamos com condições facilitadas:
-
-💳 *Formas Aceitas:*
-• Pix (Aprovação imediata)
-• Cartão de Crédito / Débito
-• Transferência Bancária
-
-💵 *Planos de Chatbot:*
-• Taxa de Instalação/Setup: A partir de R$ 350
-• Mensalidade de Manutenção: R$ 100/mês
-
----
-👉 *Digite 5* para fechar um pedido com atendente humano
-👉 *Digite 0* para voltar ao Menu Principal`;
-
-const SUBMENU_INFORMACOES = `📍 *INFORMAÇÕES E ATENDIMENTO* ⚡
-
-⏰ *Horário de Funcionamento:*
-• Segunda a Sexta: 08h00 às 18h00
-• Sábado: 08h00 às 13h00
-• *Chatbot Online:* 24 Horas por dia, 7 dias por semana!
-
----
-👉 *Digite 0* para voltar ao Menu Principal`;
-
-const SUBMENU_HUMANO = `👤 *SOLICITAÇÃO DE ATENDIMENTO HUMANO* ⚡
-
-✅ Sua solicitação foi registrada com sucesso!
-O atendente responsável já foi notificado e responderá assim que estiver disponível.
-
-_Enquanto isso, você pode deixar sua mensagem ou dúvida aqui embaixo!_
-
-👉 *Digite 0* a qualquer momento para voltar ao Menu Principal.`;
+const SUBMENU_HUMANO = CFG.submenuHumano;
 
 // ==========================================
 // HELPER: Extract text from Baileys message
@@ -150,8 +103,8 @@ async function getGeminiResponse(userId, userMessage) {
     conversationHistory.set(userId, history);
 
     const payload = {
-      systemInstruction: {
-        parts: [{ text: `Você é o Demon🤖, um assistente inteligente de IA. Responda em Português de forma direta, clara e amigável. Se o usuário quiser voltar ao menu de opções, lembre-o de digitar "0".` }]
+        systemInstruction: {
+          parts: [{ text: CFG.aiSystemPrompt }]
       },
       contents: history,
       generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
@@ -250,7 +203,7 @@ async function startBot() {
     logger: pino({ level: 'silent' }),
     auth: state,
     printQRInTerminal: false,
-    browser: ['DemonBot', 'Safari', '3.0.0'],
+    browser: [CFG.browserName, 'Safari', '3.0.0'],
   });
 
   // Save credentials on every update
@@ -313,10 +266,11 @@ async function startBot() {
         const number = participant.split(':')[0].split('@')[0];
 
         if (update.action === 'add') {
-          const welcomeCaption = `👋 *SEJA BEM-VINDO(A) AO GRUPO!* ⚡\n\nOlá @${number}, você acabou de entrar!\n\n🛡️ *Regras:* Proibido links e spam (Anti-Link ativo). Participe e aproveite!`;
+          const welcomeCaption = CFG.welcomeGroup.replace(/@NUMERO/g, `@${number}`);
           await sock.sendMessage(update.id, { text: welcomeCaption, mentions: [participant] });
         } else if (update.action === 'remove') {
-          await sock.sendMessage(update.id, { text: `🚪 @${number} saiu do grupo.`, mentions: [participant] });
+          const leaveCaption = CFG.leaveGroup.replace(/@NUMERO/g, `@${number}`);
+          await sock.sendMessage(update.id, { text: leaveCaption, mentions: [participant] });
         }
       }
     } catch (err) {
@@ -364,16 +318,7 @@ async function startBot() {
 
           // Menu em Grupo
           if (['!menu', '!ajuda', '!help'].includes(textLower)) {
-            const groupMenu = `🤖 *MENU DE COMANDOS DE GRUPO - DEMON🤖*\n\n` +
-              `👑 *Comandos de Moderação:*\n` +
-              `• *!fechar* - Tranca o grupo para apenas admins falarem\n` +
-              `• *!abrir* - Destranca o grupo para todos falarem\n` +
-              `• *!todos [aviso]* - Marca todos os membros\n` +
-              `• *!ban @membro* - Expulsa um membro\n` +
-              `• *!antilink on/off* - Liga ou desliga proteção de links\n\n` +
-              `⚡ *Inteligência Artificial:*\n` +
-              `• *!demon [pergunta]* - Pergunta para a IA no grupo`;
-            await sock.sendMessage(remoteJid, { text: groupMenu });
+            await sock.sendMessage(remoteJid, { text: CFG.groupMenu });
             continue;
           }
 
@@ -570,7 +515,7 @@ async function startBot() {
 
           case '4':
             userStates.set(userKey, 'AI_MODE');
-            const aiWelcome = `🧠 *MODO INTELIGÊNCIA ARTIFICIAL ATIVADO!* ⚡\n\nOlá! Sou o cérebro inteligente do Demon🤖.\nPode me fazer qualquer pergunta sobre nossos serviços, dúvidas gerais ou agendamentos.\n\n_Envie sua dúvida abaixo:_\n*(Digite 0 para voltar ao Menu Principal)*`;
+            const aiWelcome = CFG.aiWelcome;
             await sock.sendMessage(userKey, { text: aiWelcome });
             console.log(`🤖 Demon🤖 ativou Modo IA para [${senderNumber}]\n`);
             break;
