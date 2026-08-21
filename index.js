@@ -632,7 +632,7 @@ async function startBot() {
         // Saudações e volta ao menu principal a qualquer momento
         if (['menu_principal', 'menu', 'voltar', 'inicio', 'início', 'oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'ajuda'].includes(selection)) {
           userStates.set(userKey, 'MAIN_MENU');
-          await sendList(sock, userKey, MENU_PRINCIPAL, ROWS.main);
+          await sock.sendMessage(userKey, { text: MENU_PRINCIPAL });
           console.log(`🤖 Demon🤖 enviou o Menu Principal para [${senderNumber}]\n`);
           continue;
         }
@@ -641,7 +641,7 @@ async function startBot() {
         if (currentState === 'AI_MODE') {
           const iaReply = await getGeminiResponse(userKey, messageBody);
           const replyWithFooter = `${iaReply}\n\n─────────────────────\n👉 *Digite 0* para voltar ao Menu Principal`;
-          await sendList(sock, userKey, replyWithFooter, ROWS.aiExit, { sectionTitle: 'Navegação' });
+          await sock.sendMessage(userKey, { text: replyWithFooter });
           console.log(`🤖 Demon🤖 respondeu com IA no privado para [${senderNumber}]\n`);
           continue;
         }
@@ -653,37 +653,37 @@ async function startBot() {
         switch (selection) {
           case 'menu_produtos':
             userStates.set(userKey, 'VIEW_PRODUCTS');
-            await sendList(sock, userKey, SUBMENU_PRODUTOS, ROWS.products);
+            await sock.sendMessage(userKey, { text: SUBMENU_PRODUTOS });
             console.log(`🤖 Demon🤖 enviou Catálogo para [${senderNumber}]\n`);
             break;
 
           case 'menu_pagamentos':
             userStates.set(userKey, 'VIEW_PAYMENTS');
-            await sendList(sock, userKey, SUBMENU_PAGAMENTOS, ROWS.payments);
+            await sock.sendMessage(userKey, { text: SUBMENU_PAGAMENTOS });
             console.log(`🤖 Demon🤖 enviou Pagamentos para [${senderNumber}]\n`);
             break;
 
           case 'menu_info':
             userStates.set(userKey, 'VIEW_INFO');
-            await sendList(sock, userKey, SUBMENU_INFORMACOES, ROWS.info);
+            await sock.sendMessage(userKey, { text: SUBMENU_INFORMACOES });
             console.log(`🤖 Demon🤖 enviou Informações para [${senderNumber}]\n`);
             break;
 
           case 'modo_ia':
             userStates.set(userKey, 'AI_MODE');
-            await sendList(sock, userKey, CFG.aiWelcome, ROWS.aiExit, { sectionTitle: 'Navegação' });
+            await sock.sendMessage(userKey, { text: CFG.aiWelcome });
             console.log(`🤖 Demon🤖 ativou Modo IA para [${senderNumber}]\n`);
             break;
 
           case 'menu_humano':
             userStates.set(userKey, 'TALK_HUMAN');
-            await sendList(sock, userKey, SUBMENU_HUMANO, ROWS.human);
+            await sock.sendMessage(userKey, { text: SUBMENU_HUMANO });
             console.log(`🤖 Demon🤖 registrou Atendimento Humano para [${senderNumber}]\n`);
             break;
 
           default:
             userStates.set(userKey, 'MAIN_MENU');
-            await sendList(sock, userKey, MENU_PRINCIPAL, ROWS.main);
+            await sock.sendMessage(userKey, { text: MENU_PRINCIPAL });
             console.log(`🤖 Demon🤖 enviou Menu Inicial para [${senderNumber}]\n`);
             break;
         }
