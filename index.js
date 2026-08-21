@@ -177,10 +177,15 @@ function listPayload(bodyText, rows, opts = {}) {
 
 async function sendList(sock, jid, bodyText, rows, opts = {}) {
   try {
-    const msg = generateWAMessageFromContent(jid, listPayload(bodyText, rows, opts), {
+    let target = jid;
+    if (String(target).endsWith('@lid')) {
+      const pn = await sock.signalRepository?.lidMapping?.getPNForLID(target);
+      if (pn) target = pn;
+    }
+    const msg = generateWAMessageFromContent(target, listPayload(bodyText, rows, opts), {
       userJid: sock.user?.id
     });
-    await sock.relayMessage(jid, msg.message, { messageId: msg.key.id });
+    await sock.relayMessage(target, msg.message, { messageId: msg.key.id });
   } catch (err) {
     console.error('[sendList] Menu interativo falhou:', err.message);
     await sock.sendMessage(jid, { text: bodyText });
