@@ -13,5 +13,42 @@
   "leaveGroup": "🚪 @NUMERO saiu do grupo.",
   "groupMenu": "🤖 *MENU DE COMANDOS DE GRUPO - Demon🤖*\n\n👑 *Comandos de Moderação:*\n• *!fechar* - Tranca o grupo para apenas admins falarem\n• *!abrir* - Destranca o grupo para todos falarem\n• *!todos [aviso]* - Marca todos os membros\n• *!ban @membro* - Expulsa um membro\n• *!antilink on/off* - Liga ou desliga proteção de links\n• *!add 258xxxxxxxxx* - Adiciona alguém ao grupo (admins)\n\n⚡ *Inteligência Artificial:*\n• *!demon [pergunta]* - Pergunta para a IA no grupo",
   "aiSystemPrompt": "Você é o assistente inteligente do bot. Responda em Português de forma direta, clara e amigável. Se o usuário quiser voltar ao menu de opções, lembre-o de digitar \"0\".",
-  "aiWelcome": "🧠 *MODO INTELIGÊNCIA ARTIFICIAL ATIVADO!* ⚡\n\nOlá! Sou o cérebro inteligente do bot.\nPode me fazer qualquer pergunta sobre nossos serviços, dúvidas gerais ou agendamentos.\n\n_Envie sua dúvida abaixo:_\n*(Digite 0 para voltar ao Menu Principal)*"
+  "aiWelcome": "🧠 *MODO INTELIGÊNCIA ARTIFICIAL ATIVADO!* ⚡\n\nOlá! Sou o cérebro inteligente do bot.\nPode me fazer qualquer pergunta sobre nossos serviços, dúvidas gerais ou agendamentos.\n\n_Envie sua dúvida abaixo:_\n*(Digite 0 para voltar ao Menu Principal)*",
+
+  "produtos": [
+    {
+      "id": "1",
+      "nome": "Chatbot de Vendas para WhatsApp",
+      "preco": "MZN 5.000 (instalação) + MZN 400/mês",
+      "descricao": "Bot que atende e vende sozinho no WhatsApp 24h por dia: mostra produtos, tira dúvidas com IA e captura os dados do cliente.",
+      "especificacoes": [
+        "Responde em segundos, 24h/7dias",
+        "Envia fotos e especificações dos produtos",
+        "Captura nome, contacto e localização do cliente",
+        "Funciona em qualquer número de Moçambique"
+      ],
+      "imagem": ""
+    },
+    {
+      "id": "2",
+      "nome": "Bot de Moderação de Grupos",
+      "preco": "MZN 3.000",
+      "descricao": "Protege o teu grupo: anti-link automático, boas-vindas, comandos de admin e expulsão de infratores.",
+      "especificacoes": [
+        "Anti-link com expulsão automática",
+        "Comandos !fechar !abrir !ban !todos",
+        "Mensagens de boas-vindas personalizadas",
+        "Instalação em menos de 24h"
+      ],
+      "imagem": ""
+    }
+  ],
+
+  "askNumero": "📝 *Quase meu!*\nPara reservar o seu produto, digite o seu *número de telefone* (ex: 84xxxxxxx):",
+  "askNome": "Obrigado! 😊 E como te chamas?",
+  "askLocal": "Prazer em conhecer-te, {{NOME}}! 📍\nEm que *zona/bairro* estás? (para combinarmos a entrega)",
+  "leadConfirm": "✅ *PEDIDO REGISTADO COM SUCESSO!*\n\n🛍️ Produto: {{PRODUTO}}\n📞 Contacto: {{NUMERO}}\n📍 Zona: {{LOCALIZACAO}}\n\nAgora deixa-me contar-te porque vale mesmo a pena...",
+  "pitchPosVenda": "🔥 Este produto está a VOAR — vários clientes garantiram o deles só esta semana!\n👉 Queres garantir o teu? É só responder aqui!",
+  "followUpMessage": "Olá{{NOME}}! 👋 Ainda está por aí?\nAinda tem interesse no *{{PRODUTO}}*? Posso reservar-lhe já — é só responder!",
+  "salesSystemPrompt": "Você é um vendedor experiente, simpático e persuasivo que conversa pelo WhatsApp. Está a vender: {{PRODUTO_NOME}} (Preço: {{PRODUTO_PRECO}}). Descrição: {{PRODUTO_DESCRICAO}}. Especificações: {{ESPECIFICACOES}}.\nO cliente chama-se {{NOME_CLIENTE}}, vive em {{LOCALIZACAO}} e deixou o contacto {{NUMERO_CLIENTE}}.\nRegras: responda sempre em português de Moçambique, mensagens curtas e entusiasmadas; destaque os benefícios do produto; responda às objeções com confiança; crie leve urgência (stock/promoção limitada) sem mentir sobre factos não fornecidos; se o cliente mostrar interesse em comprar, felicite-o e diga que o vendedor humano vai confirmar o pedido pelo contacto indicado. Se ele quiser sair, diga para digitar 0."
 }

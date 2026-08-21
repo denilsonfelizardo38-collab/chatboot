@@ -64,6 +64,37 @@ const BOT_START_TIME = Math.floor(Date.now() / 1000);
 const userStates = new Map();
 const conversationHistory = new Map();
 
+// ==========================================
+// FUNIL DE VENDAS: leads + follow-up de 10 min
+// ==========================================
+
+const leads = new Map();          // userId -> { step, produto, numero, nome, localizacao }
+const followUpTimers = new Map(); // userId -> timeout handle
+const FOLLOW_UP_MS = 10 * 60 * 1000;
+
+function clearFollowUp(userId) {
+  const t = followUpTimers.get(userId);
+  if (t) clearTimeout(t);
+  followUpTimers.delete(userId);
+}
+
+function armFollowUp(sock, userId) {
+  clearFollowUp(userId);
+  const t = setTimeout(async () => {
+    try {
+      const lead = leads.get(userId);
+      if (!lead) return;
+      const msg = (CFG.followUpMessage || 'Olá! Ainda está por aí? 👋 Ainda tem interesse no *{{PRODUTO}}*?')
+        .replace(/{{NOME}}/g, lead.nome ? `, ${lead.nome}` : '')
+        .replace(/{{PRODUTO}}/g, lead.produto?.nome || 'produto');
+      await sock.sendMessage(userId, { text: msg });
+      console.log(`[Follow-up] enviado para [${userId}] sobre ${lead.produto?.nome || '?'}`);
+    } catch {}
+    armFollowUp(sock, userId);
+  }, FOLLOW_UP_MS);
+  followUpTimers.set(userId, t);
+}
+
 const CONFIG = {
   botName: CFG.botName,
   antiLink: CFG.antiLink,
@@ -226,10 +257,49 @@ async function sendList(sock, jid, bodyText, rows, opts = {}) {
 }
 
 // ==========================================
+// FUNIL DE VENDAS: catálogo e prompt de vendedor
+// ==========================================
+
+function getProdutos() {
+  return Array.isArray(CFG.produtos) ? CFG.produtos : [];
+}
+
+function productListText() {
+  const prods = getProdutos();
+  if (!prods.length) return null;
+  let t = '🛍️ *NOSSOS PRODUTOS*\n\n';
+  prods.forEach((p, i) => {
+    t += `*${i + 1}. ${p.nome}*${p.preco ? `\n💰 ${p.preco}` : ''}\n${p.descricao || ''}\n\n`;
+  });
+  t += '_Digite o *número* do produto para ver tudo sobre ele_\n_Digite 0 para voltar ao Menu Principal_';
+  return t;
+}
+
+function findProduto(textLower) {
+  const prods = getProdutos();
+  const idx = parseInt(textLower, 10) - 1;
+  if (!Number.isNaN(idx) && prods[idx]) return prods[idx];
+  return prods.find(p => p.nome && String(p.nome).toLowerCase().includes(textLower)) || null;
+}
+
+function buildSalesPrompt(lead) {
+  const p = lead.produto || {};
+  return (CFG.salesSystemPrompt ||
+    'Você é um vendedor persuasivo pelo WhatsApp. Produto: {{PRODUTO_NOME}}. Responda curto, em português, sempre empurrando para a compra.')
+    .replace(/{{PRODUTO_NOME}}/g, p.nome || 'produto')
+    .replace(/{{PRODUTO_PRECO}}/g, p.preco || 'a consultar')
+    .replace(/{{PRODUTO_DESCRICAO}}/g, p.descricao || '')
+    .replace(/{{ESPECIFICACOES}}/g, Array.isArray(p.especificacoes) ? p.especificacoes.join('; ') : '')
+    .replace(/{{NOME_CLIENTE}}/g, lead.nome || 'cliente')
+    .replace(/{{LOCALIZACAO}}/g, lead.localizacao || '')
+    .replace(/{{NUMERO_CLIENTE}}/g, lead.numero || '');
+}
+
+// ==========================================
 // FUNÇÃO PARA CHAMAR A API DO GOOGLE GEMINI
 // ==========================================
 
-async function getGeminiResponse(userId, userMessage) {
+async function getGeminiResponse(userId, userMessage, systemInstructionText) {
   try {
     if (!GEMINI_API_KEY) {
       return "⚠️ Chave do Gemini não configurada no arquivo .env.";
@@ -243,7 +313,7 @@ async function getGeminiResponse(userId, userMessage) {
 
     const payload = {
         systemInstruction: {
-          parts: [{ text: CFG.aiSystemPrompt }]
+          parts: [{ text: systemInstructionText || CFG.aiSystemPrompt }]
       },
       contents: history,
       generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
@@ -683,10 +753,101 @@ async function startBot() {
 
         // Saudações e volta ao menu principal a qualquer momento
         if (['menu_principal', 'menu', 'voltar', 'inicio', 'início', 'oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'ajuda'].includes(selection)) {
+          leads.delete(userKey);
+          clearFollowUp(userKey);
           userStates.set(userKey, 'MAIN_MENU');
           await sock.sendMessage(userKey, { text: MENU_PRINCIPAL });
           console.log(`🤖 Demon🤖 enviou o Menu Principal para [${senderNumber}]\n`);
           continue;
+        }
+
+        // ==========================================
+        // FUNIL DE VENDAS
+        // ==========================================
+
+        // Escolha de produto dentro da lista
+        if (currentState === 'PRODUCT_LIST' && !leads.has(userKey)) {
+          const prod = findProduto(textLower);
+          if (prod) {
+            leads.set(userKey, { step: 'ASK_NUMERO', produto: prod });
+            armFollowUp(sock, userKey);
+            let cap = `🔥 *${prod.nome}*${prod.preco ? `\n💰 *Preço:* ${prod.preco}` : ''}\n\n${prod.descricao || ''}`;
+            if (Array.isArray(prod.especificacoes) && prod.especificacoes.length) {
+              cap += `\n\n📋 *Especificações:*\n${prod.especificacoes.map(e => `• ${e}`).join('\n')}`;
+            }
+            cap += `\n\n${CFG.pitchPosVenda || ''}`;
+            try {
+              if (prod.imagem) {
+                await sock.sendMessage(userKey, { image: { url: prod.imagem }, caption: cap });
+              } else {
+                await sock.sendMessage(userKey, { text: cap });
+              }
+            } catch (err) {
+              console.error('[vendas] falha ao enviar imagem do produto:', err.message);
+              await sock.sendMessage(userKey, { text: cap });
+            }
+            await sock.sendMessage(userKey, { text: CFG.askNumero || 'Digite o seu número de telefone:' });
+            console.log(`🛒 [${senderNumber}] escolheu o produto "${prod.nome}"`);
+            continue;
+          }
+          await sock.sendMessage(userKey, { text: '⚠️ Não encontrei esse produto. Digite o *número* dele na lista, ou 0 para voltar.' });
+          continue;
+        }
+
+        // Passos do lead: número → nome → zona → vendedor IA
+        const lead = leads.get(userKey);
+        if (lead) {
+          clearFollowUp(userKey);
+
+          if (lead.step === 'ASK_NUMERO') {
+            const num = textLower.replace(/[^\d]/g, '');
+            if (num.length < 7) {
+              armFollowUp(sock, userKey);
+              await sock.sendMessage(userKey, { text: '⚠️ Esse número parece curto. Exemplo válido: *84xxxxxxx*' });
+              continue;
+            }
+            lead.numero = num;
+            lead.step = 'ASK_NOME';
+            armFollowUp(sock, userKey);
+            await sock.sendMessage(userKey, { text: CFG.askNome || 'Como te chamas?' });
+            console.log(`🛒 [${senderNumber}] deu o contacto ${num}`);
+            continue;
+          }
+
+          if (lead.step === 'ASK_NOME') {
+            lead.nome = messageBody.trim().slice(0, 60);
+            lead.step = 'ASK_LOCAL';
+            armFollowUp(sock, userKey);
+            await sock.sendMessage(userKey, { text: (CFG.askLocal || 'Qual é a tua zona?').replace(/{{NOME}}/g, lead.nome) });
+            console.log(`🛒 [${senderNumber}] chama-se ${lead.nome}`);
+            continue;
+          }
+
+          if (lead.step === 'ASK_LOCAL') {
+            lead.localizacao = messageBody.trim().slice(0, 120);
+            lead.step = 'SELLING';
+            armFollowUp(sock, userKey);
+            const confirmMsg = (CFG.leadConfirm || '✅ Pedido registado!')
+              .replace(/{{PRODUTO}}/g, lead.produto?.nome || '')
+              .replace(/{{NUMERO}}/g, lead.numero || '')
+              .replace(/{{LOCALIZACAO}}/g, lead.localizacao || '')
+              .replace(/{{NOME}}/g, lead.nome || '');
+            await sock.sendMessage(userKey, { text: confirmMsg });
+            const firstPitch = await getGeminiResponse(userKey,
+              `Acabei de registar o meu pedido do ${lead.produto?.nome}. Faz agora a tua apresentação de venda.`,
+              buildSalesPrompt(lead));
+            await sock.sendMessage(userKey, { text: firstPitch });
+            console.log(`🛒 Lead completo de [${senderNumber}] — vendedor IA assumiu`);
+            continue;
+          }
+
+          if (lead.step === 'SELLING') {
+            const salesReply = await getGeminiResponse(userKey, messageBody, buildSalesPrompt(lead));
+            await sock.sendMessage(userKey, { text: salesReply });
+            armFollowUp(sock, userKey);
+            console.log(`🤝 Vendedor IA respondeu a [${senderNumber}]`);
+            continue;
+          }
         }
 
         // Se o usuário estiver no modo de Chat IA Livre
@@ -704,8 +865,8 @@ async function startBot() {
 
         switch (selection) {
           case 'menu_produtos':
-            userStates.set(userKey, 'VIEW_PRODUCTS');
-            await sock.sendMessage(userKey, { text: SUBMENU_PRODUTOS });
+            userStates.set(userKey, 'PRODUCT_LIST');
+            await sock.sendMessage(userKey, { text: productListText() || SUBMENU_PRODUTOS });
             console.log(`🤖 Demon🤖 enviou Catálogo para [${senderNumber}]\n`);
             break;
 
