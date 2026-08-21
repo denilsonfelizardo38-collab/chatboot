@@ -1,10 +1,13 @@
 services:
-  - type: worker
+  - type: web
     name: demon-bot
     runtime: node
     plan: free
     buildCommand: npm install
     startCommand: node index.js
+    healthCheckPath: /
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: NODE_VERSION
+        value: 20

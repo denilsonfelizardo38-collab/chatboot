@@ -87,6 +87,48 @@ function getMessageContent(msg) {
 }
 
 // ==========================================
+// HELPER: Menus interativos (botões/lista)
+// ==========================================
+
+const ROWS = {
+  main: [
+    { title: '🛍️ Produtos / Serviços', rowId: 'menu_produtos' },
+    { title: '💰 Preços e Pagamento', rowId: 'menu_pagamentos' },
+    { title: '📍 Horário e Informações', rowId: 'menu_info' },
+    { title: '🧠 Falar com a IA', rowId: 'modo_ia' },
+    { title: '👤 Atendente Humano', rowId: 'menu_humano' }
+  ],
+  products: [
+    { title: '💰 Formas de Pagamento', rowId: 'menu_pagamentos' },
+    { title: '🧠 Tirar dúvidas com IA', rowId: 'modo_ia' },
+    { title: '🏠 Menu Principal', rowId: 'menu_principal' }
+  ],
+  payments: [
+    { title: '👤 Falar com Atendente', rowId: 'menu_humano' },
+    { title: '🏠 Menu Principal', rowId: 'menu_principal' }
+  ],
+  info: [
+    { title: '🏠 Menu Principal', rowId: 'menu_principal' }
+  ],
+  human: [
+    { title: '🏠 Menu Principal', rowId: 'menu_principal' }
+  ],
+  aiExit: [
+    { title: '🏠 Menu Principal', rowId: 'menu_principal' }
+  ]
+};
+
+function listPayload(bodyText, rows, opts = {}) {
+  return {
+    text: bodyText,
+    title: CFG.botName,
+    buttonText: CFG.menuButtonText || '📋 Abrir Menu',
+    footer: '👇 Toque no botão para escolher',
+    sections: [{ title: opts.sectionTitle || 'Opções', rows }]
+  };
+}
+
+// ==========================================
 // FUNÇÃO PARA CHAMAR A API DO GOOGLE GEMINI
 // ==========================================
 
@@ -473,62 +515,72 @@ async function startBot() {
         const currentState = userStates.get(userKey) || 'INITIAL';
         const textLower = messageBody.toLowerCase().trim();
 
-        // Comando para voltar ao menu principal a qualquer momento
-        if (['0', 'menu', 'voltar', 'inicio', 'início', 'oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'ajuda'].includes(textLower) && currentState !== 'INITIAL') {
+        // Mapeia números digitados para os IDs dos botões (compatibilidade)
+        const typedMap = {
+          '0': 'menu_principal',
+          '1': 'menu_produtos',
+          '2': 'menu_pagamentos',
+          '3': 'menu_info',
+          '4': 'modo_ia',
+          '5': 'menu_humano'
+        };
+        let selection = typedMap[textLower] || textLower;
+
+        // Saudações e volta ao menu principal a qualquer momento
+        if (['menu_principal', 'menu', 'voltar', 'inicio', 'início', 'oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'ajuda'].includes(selection)) {
           userStates.set(userKey, 'MAIN_MENU');
-          await sock.sendMessage(userKey, { text: MENU_PRINCIPAL });
+          await sock.sendMessage(userKey, listPayload(MENU_PRINCIPAL, ROWS.main));
           console.log(`🤖 Demon🤖 enviou o Menu Principal para [${senderNumber}]\n`);
           continue;
         }
 
-        // Se o usuário estiver no modo de Chat IA Livre (Opção 4)
+        // Se o usuário estiver no modo de Chat IA Livre
         if (currentState === 'AI_MODE') {
           const iaReply = await getGeminiResponse(userKey, messageBody);
           const replyWithFooter = `${iaReply}\n\n─────────────────────\n👉 *Digite 0* para voltar ao Menu Principal`;
-          await sock.sendMessage(userKey, { text: replyWithFooter });
+          await sock.sendMessage(userKey, listPayload(replyWithFooter, ROWS.aiExit, { sectionTitle: 'Navegação' }));
           console.log(`🤖 Demon🤖 respondeu com IA no privado para [${senderNumber}]\n`);
           continue;
         }
 
         // ==========================================
-        // PROCESSAMENTO DAS ESCOLHAS DO MENU
+        // PROCESSAMENTO DAS ESCOLHAS DO MENU (BOTÕES)
         // ==========================================
 
-        switch (textLower) {
-          case '1':
+        switch (selection) {
+          case 'menu_produtos':
             userStates.set(userKey, 'VIEW_PRODUCTS');
-            await sock.sendMessage(userKey, { text: SUBMENU_PRODUTOS });
+            await sock.sendMessage(userKey, listPayload(SUBMENU_PRODUTOS, ROWS.products));
             console.log(`🤖 Demon🤖 enviou Catálogo para [${senderNumber}]\n`);
             break;
 
-          case '2':
+          case 'menu_pagamentos':
             userStates.set(userKey, 'VIEW_PAYMENTS');
-            await sock.sendMessage(userKey, { text: SUBMENU_PAGAMENTOS });
+            await sock.sendMessage(userKey, listPayload(SUBMENU_PAGAMENTOS, ROWS.payments));
             console.log(`🤖 Demon🤖 enviou Pagamentos para [${senderNumber}]\n`);
             break;
 
-          case '3':
+          case 'menu_info':
             userStates.set(userKey, 'VIEW_INFO');
-            await sock.sendMessage(userKey, { text: SUBMENU_INFORMACOES });
+            await sock.sendMessage(userKey, listPayload(SUBMENU_INFORMACOES, ROWS.info));
             console.log(`🤖 Demon🤖 enviou Informações para [${senderNumber}]\n`);
             break;
 
-          case '4':
+          case 'modo_ia':
             userStates.set(userKey, 'AI_MODE');
-            const aiWelcome = CFG.aiWelcome;
-            await sock.sendMessage(userKey, { text: aiWelcome });
+            await sock.sendMessage(userKey, listPayload(CFG.aiWelcome, ROWS.aiExit, { sectionTitle: 'Navegação' }));
             console.log(`🤖 Demon🤖 ativou Modo IA para [${senderNumber}]\n`);
             break;
 
-          case '5':
+          case 'menu_humano':
             userStates.set(userKey, 'TALK_HUMAN');
-            await sock.sendMessage(userKey, { text: SUBMENU_HUMANO });
+            await sock.sendMessage(userKey, listPayload(SUBMENU_HUMANO, ROWS.human));
             console.log(`🤖 Demon🤖 registrou Atendimento Humano para [${senderNumber}]\n`);
             break;
 
           default:
             userStates.set(userKey, 'MAIN_MENU');
-            await sock.sendMessage(userKey, { text: MENU_PRINCIPAL });
+            await sock.sendMessage(userKey, listPayload(MENU_PRINCIPAL, ROWS.main));
             console.log(`🤖 Demon🤖 enviou Menu Inicial para [${senderNumber}]\n`);
             break;
         }

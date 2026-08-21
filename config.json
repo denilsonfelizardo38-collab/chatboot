@@ -4,24 +4,14 @@
   "antiLink": true,
   "welcomeMessage": true,
   "browserName": "DemonBot",
-
   "menuPrincipal": "🤖 *ATENDIMENTO AUTOMÁTICO - Demon🤖* ⚡\n\nOlá! Seja muito bem-vindo(a).\nComo posso ajudar você hoje?\n\n*Escolha uma das opções abaixo digitando o número:*\n\n1️⃣ 🛍️ *Ver Produtos / Serviços*\n2️⃣ 💰 *Preços e Formas de Pagamento*\n3️⃣ 📍 *Horário de Atendimento e Informações*\n4️⃣ 🧠 *Tirar Dúvidas com Inteligência Artificial*\n5️⃣ 👤 *Falar com Atendente Humano*\n\n_Digite o número correspondente (ex: 1, 2, 3...)_",
-
   "submenuProdutos": "🛍️ *CATÁLOGO DE PRODUTOS & SERVIÇOS* ⚡\n\nAqui estão as nossas soluções disponíveis:\n\n💻 *1. Chatbot Personalizado com IA* (Atendimento 24h no WhatsApp)\n🛡️ *2. Bot de Moderação de Grupos* (Anti-Link, Boas-Vindas e Comandos)\n⚙️ *3. Automações e Integrações sob Medida*\n\n---\n👉 *Digite 2* para ver formas de pagamento\n👉 *Digite 4* para tirar dúvidas com a IA\n👉 *Digite 0* para voltar ao Menu Principal",
-
-  "submenuPagamentos": "💰 *FORMAS DE PAGAMENTO & VALORES* ⚡\n\nTrabalhamos com condições facilitadas:\n\n💳 *Formas Aceitas:*\n• Pix (Aprovação imediata)\n• Cartão de Crédito / Débito\n• Transferência Bancária\n\n💵 *Planos de Chatbot:*\n• Taxa de Instalação/Setup: A partir de R$ 350\n• Mensalidade de Manutenção: R$ 100/mês\n\n---\n👉 *Digite 5* para fechar um pedido com atendente humano\n👉 *Digite 0* para voltar ao Menu Principal",
-
+  "submenuPagamentos": "💰 *FORMAS DE PAGAMENTO & VALORES* ⚡\n\nTrabalhamos com condições facilitadas:\n\n💳 *Formas Aceitas:*\n• M-Pesa\n• E-Mola\n• Paypal\n\n💵 *Planos de Chatbot:*\n• Mensalidade de Manutenção: MZN 400/mês\n\n---\n👉 *Digite 5* para fechar um pedido com atendente humano\n👉 *Digite 0* para voltar ao Menu Principal",
   "submenuInformacoes": "📍 *INFORMAÇÕES E ATENDIMENTO* ⚡\n\n⏰ *Horário de Funcionamento:*\n• Segunda a Sexta: 08h00 às 18h00\n• Sábado: 08h00 às 13h00\n• *Chatbot Online:* 24 Horas por dia, 7 dias por semana!\n\n---\n👉 *Digite 0* para voltar ao Menu Principal",
-
   "submenuHumano": "👤 *SOLICITAÇÃO DE ATENDIMENTO HUMANO* ⚡\n\n✅ Sua solicitação foi registrada com sucesso!\nO atendente responsável já foi notificado e responderá assim que estiver disponível.\n\n_Enquanto isso, você pode deixar sua mensagem ou dúvida aqui embaixo!_\n\n👉 *Digite 0* a qualquer momento para voltar ao Menu Principal.",
-
   "welcomeGroup": "👋 *SEJA BEM-VINDO(A) AO GRUPO!* ⚡\n\nOlá @NUMERO, você acabou de entrar!\n\n🛡️ *Regras:* Proibido links e spam (Anti-Link ativo). Participe e aproveite!",
-
   "leaveGroup": "🚪 @NUMERO saiu do grupo.",
-
   "groupMenu": "🤖 *MENU DE COMANDOS DE GRUPO - Demon🤖*\n\n👑 *Comandos de Moderação:*\n• *!fechar* - Tranca o grupo para apenas admins falarem\n• *!abrir* - Destranca o grupo para todos falarem\n• *!todos [aviso]* - Marca todos os membros\n• *!ban @membro* - Expulsa um membro\n• *!antilink on/off* - Liga ou desliga proteção de links\n\n⚡ *Inteligência Artificial:*\n• *!demon [pergunta]* - Pergunta para a IA no grupo",
-
   "aiSystemPrompt": "Você é o assistente inteligente do bot. Responda em Português de forma direta, clara e amigável. Se o usuário quiser voltar ao menu de opções, lembre-o de digitar \"0\".",
-
   "aiWelcome": "🧠 *MODO INTELIGÊNCIA ARTIFICIAL ATIVADO!* ⚡\n\nOlá! Sou o cérebro inteligente do bot.\nPode me fazer qualquer pergunta sobre nossos serviços, dúvidas gerais ou agendamentos.\n\n_Envie sua dúvida abaixo:_\n*(Digite 0 para voltar ao Menu Principal)*"
 }
