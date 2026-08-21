@@ -23,12 +23,18 @@ let currentQRImage = null;
 
 const server = http.createServer((req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  if (req.url === '/qr' && currentQRImage) {
-    res.writeHead(200, { 'Content-Type': 'image/png' });
-    res.end(currentQRImage);
-  } else if (req.url === '/qr') {
+  const pathOnly = (req.url || '/').split('?')[0];
+  if ((pathOnly === '/qr' || pathOnly === '/qr.png') && currentQRImage) {
+    if (pathOnly === '/qr') {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end('<html><head><meta http-equiv="refresh" content="15"><style>body{font-family:sans-serif;text-align:center;background:#111;color:#eee}img{max-width:400px;width:100%;background:#fff;padding:10px;border-radius:8px}</style></head><body><h1>📱 Escaneia o QR Code</h1><img src="/qr.png?v=' + Date.now() + '"><p>Esta pagina atualiza o QR automaticamente a cada 15 segundos.</p></body></html>');
+    } else {
+      res.writeHead(200, { 'Content-Type': 'image/png' });
+      res.end(currentQRImage);
+    }
+  } else if (pathOnly === '/qr' || pathOnly === '/qr.png') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end('<html><head><meta http-equiv="refresh" content="5"></head><body><h1>QR Code ainda nao gerado. Aguarda...</h1><p>Esta pagina recarrega automaticamente a cada 5 segundos.</p></body></html>');
+    res.end('<html><head><meta http-equiv="refresh" content="5"></head><body style="font-family:sans-serif;text-align:center;background:#111;color:#eee"><h1>QR Code ainda nao gerado. Aguarda...</h1><p>Esta pagina recarrega automaticamente a cada 5 segundos.</p></body></html>');
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end(`${CFG.botName} está ativo!`);
