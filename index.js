@@ -176,19 +176,42 @@ function listPayload(bodyText, rows, opts = {}) {
 }
 
 async function sendList(sock, jid, bodyText, rows, opts = {}) {
-  try {
-    let target = jid;
-    if (String(target).endsWith('@lid')) {
-      const pn = await sock.signalRepository?.lidMapping?.getPNForLID(target);
-      if (pn) target = pn;
+  const targets = [];
+  if (String(jid).endsWith('@lid')) {
+    targets.push(jid);
+    try {
+      const pn = await sock.signalRepository?.lidMapping?.getPNForLID(jid);
+      if (pn) {
+        const bare = pn.split('@')[0].split(':')[0];
+        targets.push(`${bare}@s.whatsapp.net`);
+        targets.push(pn);
+      }
+    } catch {}
+  } else {
+    targets.push(jid);
+  }
+
+  for (const target of targets) {
+    try {
+      if (typeof sock.assertSessions === 'function') {
+        await sock.assertSessions([target], true);
+      }
+      const msg = generateWAMessageFromContent(target, listPayload(bodyText, rows, opts), {
+        userJid: sock.user?.id
+      });
+      await sock.relayMessage(target, msg.message, { messageId: msg.key.id });
+      console.log(`[sendList] menu interativo enviado com sucesso para ${target}`);
+      return;
+    } catch (err) {
+      console.error(`[sendList] falhou para ${target}: ${err.message}`);
     }
-    const msg = generateWAMessageFromContent(target, listPayload(bodyText, rows, opts), {
-      userJid: sock.user?.id
-    });
-    await sock.relayMessage(target, msg.message, { messageId: msg.key.id });
-  } catch (err) {
-    console.error('[sendList] Menu interativo falhou:', err.message);
+  }
+
+  console.error('[sendList] todos os alvos falharam - a enviar texto simples');
+  try {
     await sock.sendMessage(jid, { text: bodyText });
+  } catch (err) {
+    console.error('[sendList] fallback texto falhou:', err.message);
   }
 }
 
