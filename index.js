@@ -336,6 +336,9 @@ async function startBot() {
 
     for (const msg of messages) {
       try {
+        const dbgJid = msg.key.remoteJid || '?';
+        console.log(`[DEBUG] msg recebida | jid=${dbgJid} | fromMe=${msg.key.fromMe} | type=${type} | temTexto=${!!getMessageContent(msg).trim()}`);
+
         if (msg.key.fromMe) continue;
 
         const remoteJid = msg.key.remoteJid;
